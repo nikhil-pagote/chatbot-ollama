@@ -15,6 +15,10 @@ ollama pull llama3
 ```
 https://www.glukhov.org/post/2024/12/ollama-cheatsheet/\
 
+On updating dependencies in pyproject.toml:
+poetry lock
+poetry install
+
 To Run your FastAPI app:
 poetry run uvicorn src.chatbot_ollama.main:app --reload --host 0.0.0.0
 FastAPI + popup.js at localhost:8000

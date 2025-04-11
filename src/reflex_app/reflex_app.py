@@ -1,4 +1,6 @@
 import reflex as rx
+import httpx
+
 from rxconfig import config
 
 
@@ -7,12 +9,26 @@ class ChatState(rx.State):
     messages: list[str] = []
     user_input: str = ""
 
-    def send(self):
+    async def send(self):
         if self.user_input.strip():
-            self.messages.append(f"You: {self.user_input}")
-            # TODO: Replace the below line with actual call to backend/chatbot
-            self.messages.append(f"Bot: You said '{self.user_input}'")
+            user_msg = self.user_input
+            self.messages.append(f"You: {user_msg}")
             self.user_input = ""
+
+            try:
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(
+                        "http://localhost:8000/ask",
+                        json={"message": user_msg},
+                        timeout=10.0
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    bot_reply = data.get("reply", "[No response]")
+            except Exception as e:
+                bot_reply = f"[Error contacting bot: {str(e)}]"
+
+            self.messages.append(f"Bot: {bot_reply}")
 
 
 def index() -> rx.Component:
