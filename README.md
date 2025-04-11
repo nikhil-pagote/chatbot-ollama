@@ -31,4 +31,13 @@ To Run the Reflex App:
 in project root: poetry run reflex init
         A blank Reflex app
 poetry run reflex run
+poetry run reflex run --env prod
+Clear old build and force recompile
+rm -rf .web
+poetry run reflex run --env prod
+or
+poetry run reflex run --env prod --force-compile
 This will launch the app at http://localhost:3000.
+
+To run niceGUI app:
+poetry run python src/frontends/nicegui_ui.py
