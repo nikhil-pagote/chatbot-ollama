@@ -1,0 +1,29 @@
+[project]
+name = "chatbot-ollama"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Nikhil Pagote",email = "nikhil.pagote@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.115.12,<0.116.0)",
+    "uvicorn (>=0.34.0,<0.35.0)",
+    "requests (>=2.32.3,<3.0.0)",
+    "python-dotenv (>=1.1.0,<2.0.0)",
+    "jinja2 (>=3.1.6,<4.0.0)",
+    "aiofiles (>=24.1.0,<25.0.0)"
+]
+
+[tool.poetry]
+packages = [{include = "chatbot_ollama", from = "src"}]
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+isort = "^6.0.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

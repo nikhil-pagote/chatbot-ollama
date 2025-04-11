@@ -1,0 +1,19 @@
+{
+  "name": "FastAPI+Poetry+Ollama+Chatbot",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "devcontainer",
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "poetry install",
+  "postStartCommand": "poetry run uvicorn src.chatbot_ollama.main:app --reload --host 0.0.0.0",
+  "runServices": ["ollama"],
+  "forwardPorts": [8000],
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    }
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance"
+  ]
+}
