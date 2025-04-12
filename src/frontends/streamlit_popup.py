@@ -39,8 +39,8 @@ if "history" not in st.session_state:
 
 # Chat input
 if prompt := st.chat_input("Ask me anything..."):
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # with st.chat_message("user"):
+    #     st.markdown(prompt)
 
     try:
         res = requests.post(OLLAMA_URL, json={
