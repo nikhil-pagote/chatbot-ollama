@@ -182,3 +182,4 @@ src/chroma_db
 src/frontends/chroma_db
 src/frontends/rag_uploads
 src/rag_uploads
+src/frontends/faiss_index

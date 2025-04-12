@@ -1,6 +1,7 @@
 from langchain_community.document_loaders import PyMuPDFLoader
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pathlib import Path
 import os
@@ -10,6 +11,7 @@ os.environ["CHROMA_TENANT"] = "default_tenant"
 os.environ["CHROMA_DATABASE"] = "default_db"
 
 CHROMA_PATH = "chroma_db"
+FAISS_PATH = "faiss_index"
 
 def load_and_embed_pdfs(upload_folder: str = "rag_uploads"):
     all_documents = []
@@ -25,7 +27,12 @@ def load_and_embed_pdfs(upload_folder: str = "rag_uploads"):
     split_docs = text_splitter.split_documents(all_documents)
 
     embeddings = OllamaEmbeddings(model="llama3", base_url="http://ollama:11434")
-    vectordb = Chroma.from_documents(split_docs, embedding=embeddings, persist_directory=CHROMA_PATH)
+    
+     # Create Chroma vector store (auto-persists)
+    Chroma.from_documents(split_docs, embedding=embeddings, persist_directory=CHROMA_PATH)
 
-    vectordb.persist()
-    print("✅ Documents embedded and saved to ChromaDB.")
+    # Create FAISS vector store (explicit save)
+    faiss_db = FAISS.from_documents(split_docs, embedding=embeddings)
+    faiss_db.save_local(FAISS_PATH)
+
+    print("✅ Documents embedded and saved to ChromaDB and FAISS.")
