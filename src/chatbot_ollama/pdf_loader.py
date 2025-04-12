@@ -5,6 +5,10 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pathlib import Path
 import os
 
+# ✅ Fix for Chroma v0.4+ - required environment variables
+os.environ["CHROMA_TENANT"] = "default_tenant"
+os.environ["CHROMA_DATABASE"] = "default_db"
+
 CHROMA_PATH = "chroma_db"
 
 def load_and_embed_pdfs(upload_folder: str = "rag_uploads"):
