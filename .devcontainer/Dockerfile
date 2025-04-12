@@ -5,10 +5,12 @@ FROM mcr.microsoft.com/devcontainers/python:1-3.11
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg2 \
+    xdg-utils \
     lsb-release \
     ca-certificates \
     build-essential \
     git \
+    graphviz \
     && rm -rf /var/lib/apt/lists/*
 
 # Optional: Install NVIDIA container toolkit (note: only works with WSL2 + proper host setup)
