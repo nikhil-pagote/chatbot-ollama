@@ -19,6 +19,8 @@ dependencies = [
     "langchain",
     "langchain-community",
     "chromadb",
+    "langchain-chroma",
+    "langchain_ollama",
     "faiss-cpu",
     "pymupdf",
     # Frontend tools (There is dependency conflict if we try to install all of them)

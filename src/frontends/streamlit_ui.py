@@ -5,8 +5,8 @@ import sys
 from pathlib import Path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from src.chatbot_ollama.pdf_loader import load_and_embed_pdfs
-from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import OllamaEmbeddings
+from langchain_chroma import Chroma
+from langchain_ollama import OllamaEmbeddings
 from langchain_core.documents import Document
 
 st.set_page_config(page_title="Ollama Chat", page_icon="💬", layout="wide")
@@ -59,12 +59,28 @@ def get_relevant_context(question: str, k: int = 3) -> str:
 
 # Chat input
 if prompt := st.chat_input("Ask me anything..."):
-    # with st.chat_message("user"):
-    #     st.markdown(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
     try:
         context = get_relevant_context(prompt)
-        full_prompt = f"""Use the following context to answer the question.\n\nContext:\n{context}\n\nQuestion: {prompt}"""
+
+        if context.strip():
+            full_prompt = f"""
+You are a helpful assistant. Answer the question using ONLY the context below.
+If the answer is not in the context, simply reply: "I don't know".
+
+### CONTEXT:
+{context}
+
+### QUESTION:
+{prompt}
+
+### ANSWER:
+"""
+        else:
+            full_prompt = prompt  # fallback to base model knowledge
+
         res = requests.post(OLLAMA_URL, json={
             "model": OLLAMA_MODEL,
             "prompt": full_prompt,
@@ -83,5 +99,12 @@ for user, bot in st.session_state.history:
         st.markdown(user)
     with st.chat_message("assistant"):
         st.markdown(bot)
+
+# Optional debug panel for retrieved context
+if context := st.session_state.get("_last_context"):
     with st.expander("📄 Retrieved Context"):
         st.markdown(context)
+
+# Store last context for debug use
+if prompt:
+    st.session_state["_last_context"] = context
