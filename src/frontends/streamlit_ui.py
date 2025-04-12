@@ -1,7 +1,10 @@
 import streamlit as st
 import requests
 import os
+import sys
 from pathlib import Path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from src.chatbot_ollama.pdf_loader import load_and_embed_pdfs
 
 st.set_page_config(page_title="Ollama Chat", page_icon="💬", layout="wide")
 
@@ -13,24 +16,28 @@ st.sidebar.title("⚙️ Settings")
 OLLAMA_MODEL = st.sidebar.selectbox("Choose a model", AVAILABLE_MODELS, index=0)
 
 st.sidebar.markdown("---")
-if st.sidebar.button("🧹 Clear Chat"):
+if st.sidebar.button("🩹 Clear Chat"):
     st.session_state.history = []
     st.rerun()
 
 # File uploader for RAG (PDFs)
-st.sidebar.markdown("### 📎 Upload PDFs for RAG")
+st.sidebar.markdown("### 📌 Upload PDFs for RAG")
 pdf_files = st.sidebar.file_uploader("Upload one or more PDFs", type=["pdf"], accept_multiple_files=True)
 
-# Process PDF files placeholder
+# Process PDF files for RAG
 if pdf_files:
+    upload_dir = Path("rag_uploads")
+    upload_dir.mkdir(exist_ok=True)
+
     for file in pdf_files:
-        # Save uploaded file for future RAG indexing
-        upload_dir = Path("rag_uploads")
-        upload_dir.mkdir(exist_ok=True)
         filepath = upload_dir / file.name
         with open(filepath, "wb") as f:
             f.write(file.read())
-    st.sidebar.success("Files uploaded. RAG pipeline integration coming soon.")
+
+    # Trigger the embedding
+    with st.spinner("Processing PDFs and updating vector store..."):
+        load_and_embed_pdfs(str(upload_dir))
+    st.sidebar.success("✅ PDFs processed and embedded into ChromaDB.")
 
 st.title("💬 Ollama Chatbot")
 
@@ -39,8 +46,8 @@ if "history" not in st.session_state:
 
 # Chat input
 if prompt := st.chat_input("Ask me anything..."):
-    # with st.chat_message("user"):
-    #     st.markdown(prompt)
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
     try:
         res = requests.post(OLLAMA_URL, json={

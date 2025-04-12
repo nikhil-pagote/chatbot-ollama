@@ -178,3 +178,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 ollama_rag_chatbot_architecture.png
+src/chroma_db
+src/frontends/chroma_db
+src/frontends/rag_uploads
+src/rag_uploads
