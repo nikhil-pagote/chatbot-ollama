@@ -15,32 +15,40 @@ ollama pull llama3
 ```
 https://www.glukhov.org/post/2024/12/ollama-cheatsheet/\
 
-On updating dependencies in pyproject.toml:
+- On updating dependencies in pyproject.toml:
+```bash
 poetry lock
 poetry install
-
-To Run your FastAPI app:
+```
+- To Run your FastAPI app:
+```bash
 poetry run uvicorn src.chatbot_ollama.main:app --reload --host 0.0.0.0
 FastAPI + popup.js at localhost:8000
-
-To run Streamlit:
-poetry run streamlit run frontends/streamlit_popup.py
+```
+- To run Streamlit:
+```bash
+poetry run streamlit run frontends/streamlit_ui.py
 Streamlit UI at localhost:8501
-
-To Run the Reflex App:
-in project root: poetry run reflex init
-        A blank Reflex app
+```
+- To Run the Reflex App:
+```bash
+# in project root: 
+poetry run reflex init
+        #A blank Reflex app
 poetry run reflex run
 poetry run reflex run --env prod
-Clear old build and force recompile
+# Clear old build and force recompile
 rm -rf .web
 poetry run reflex run --env prod
-or
+# or
 poetry run reflex run --env prod --force-compile
-This will launch the app at http://localhost:3000.
-
-To run niceGUI app:
+# This will launch the app at http://localhost:3000.
+```
+- To run niceGUI app:
+```bash
 poetry run python src/frontends/nicegui_ui.py
-
-To run Gradio app:
+```
+- To run Gradio app:
+```bash
 poetry run python src/frontends/gradio_ui.py
+```
