@@ -28,7 +28,7 @@ def load_and_embed_pdfs(upload_folder: str = "rag_uploads"):
 
     embeddings = OllamaEmbeddings(model="llama3", base_url="http://ollama:11434")
     
-     # Create Chroma vector store (auto-persists)
+    # Create Chroma vector store (auto-persists)
     Chroma.from_documents(split_docs, embedding=embeddings, persist_directory=CHROMA_PATH)
 
     # Create FAISS vector store (explicit save)

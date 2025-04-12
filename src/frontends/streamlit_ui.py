@@ -15,7 +15,7 @@ st.set_page_config(page_title="Ollama Chat", page_icon="💬", layout="wide")
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 AVAILABLE_MODELS = ["llama3", "mistral", "gemma"]
-AVAILABLE_STORES = ["chroma", "faiss"]
+AVAILABLE_STORES = ["faiss (recommended)", "chroma", "hybrid"]
 
 # Sidebar settings
 st.sidebar.title("⚙️ Settings")
@@ -52,24 +52,36 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # Load persisted Vector DB
+
 def get_relevant_context(question: str, k: int = 3) -> str:
     embeddings = OllamaEmbeddings(model="llama3", base_url="http://ollama:11434")
-    if VECTOR_STORE == "chroma":
-        vectordb = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+    chroma_db = Chroma(persist_directory="chroma_db", embedding_function=embeddings)
+    faiss_index_path = "faiss_index"
+    if os.path.exists(faiss_index_path):
+        faiss_db = FAISS.load_local(faiss_index_path, embeddings, allow_dangerous_deserialization=True)
     else:
-        index_path = "faiss_index"
-        if not os.path.exists(index_path):
-            raise FileNotFoundError("FAISS index not found. Please upload PDFs to generate it first.")
-        vectordb = FAISS.load_local(index_path, embeddings, allow_dangerous_deserialization=True)
+        faiss_db = None
 
-    docs: list[Document] = vectordb.similarity_search(question, k=k)
+    if VECTOR_STORE == "chroma":
+        docs = chroma_db.similarity_search(question, k=k)
+    elif VECTOR_STORE == "faiss" and faiss_db:
+        docs = faiss_db.similarity_search(question, k=k)
+    elif VECTOR_STORE == "hybrid" and faiss_db:
+        chroma_docs = chroma_db.similarity_search(question, k=k)
+        faiss_docs = faiss_db.similarity_search(question, k=k)
+        combined = {doc.page_content: doc for doc in chroma_docs + faiss_docs}
+        docs = list(combined.values())[:k]
+    else:
+        docs = chroma_db.similarity_search(question, k=k)
+
     context = "\n\n".join([doc.page_content for doc in docs])
+    st.expander("Retrieved Context").markdown(context)
     return context
 
 # Chat input
 if prompt := st.chat_input("Ask me anything..."):
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # with st.chat_message("user"):
+    #     st.markdown(prompt)
 
     try:
         context = get_relevant_context(prompt)
