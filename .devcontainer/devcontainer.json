@@ -3,10 +3,10 @@
   "dockerComposeFile": ["docker-compose.yml"],
   "service": "devcontainer",
   "workspaceFolder": "/workspace",
-  "postCreateCommand": "poetry install",
+  "postCreateCommand": "poetry lock && poetry install",
   "postStartCommand": "poetry run uvicorn src.chatbot_ollama.main:app --reload --host 0.0.0.0",
   "runServices": ["ollama"],
-  "forwardPorts": [8000],
+  "forwardPorts": [8000, 11434],
   "features": {
     "ghcr.io/devcontainers/features/python:1": {
       "version": "3.12"
@@ -48,8 +48,14 @@
         "mechatroner.rainbow-csv",
         "ms-toolsai.datawrangler",
         "ms-toolsai.python-ds-extension-pack",
-        "leodevbro.blockma"
+        "leodevbro.blockma",
+        "nvidia.nsight-vscode-edition"
       ]
     }
-  }
+  },
+  "containerEnv": {
+    "NVIDIA_VISIBLE_DEVICES": "all",
+    "NVIDIA_DRIVER_CAPABILITIES": "compute,utility"
+  },
+  "envFile": ".devcontainer/.env"
 }

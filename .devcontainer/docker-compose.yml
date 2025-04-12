@@ -4,6 +4,14 @@ services:
   ollama:
     image: ollama/ollama
     container_name: ollama
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all
     ports:
       - "11434:11434"
     volumes:

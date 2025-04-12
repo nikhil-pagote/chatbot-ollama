@@ -17,10 +17,10 @@ dependencies = [
     "httpx (>=0.27.0,<1.0.0)",
     # Frontend tools (There is dependency conflict if we try to install all of them)
     "streamlit>=1.33.0,<2.0.0",        # Disable Gradio and NiceGUI to use Streamlit.
-    "gradio (==4.44.1)",               # Disable NiceGUI to use Streamlit.
-    "gradio-client (==0.18.1)",        # Gradio client
+    #"gradio (==4.44.1)",               # Disable NiceGUI to use Streamlit.
+    #"gradio-client (==0.18.1)",        # Gradio client
     #"nicegui>=1.3.17,<2.0.0",         # NiceGUI frontend
-    "reflex>=0.4.7,<1.0.0",            # Reflex (formerly Pynecone)
+    #"reflex>=0.4.7,<1.0.0",            # Reflex (formerly Pynecone)
     
 ]
 
