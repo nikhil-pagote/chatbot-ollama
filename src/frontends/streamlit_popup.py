@@ -1,27 +1,51 @@
 import streamlit as st
 import requests
 import os
+from pathlib import Path
+
+st.set_page_config(page_title="Ollama Chat", page_icon="💬", layout="wide")
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3")
+AVAILABLE_MODELS = ["llama3", "mistral", "gemma"]
 
-st.set_page_config(page_title="Ollama Chat", page_icon="💬")
+# Sidebar settings
+st.sidebar.title("⚙️ Settings")
+OLLAMA_MODEL = st.sidebar.selectbox("Choose a model", AVAILABLE_MODELS, index=0)
+
+st.sidebar.markdown("---")
+if st.sidebar.button("🧹 Clear Chat"):
+    st.session_state.history = []
+    st.rerun()
+
+# File uploader for RAG (PDFs)
+st.sidebar.markdown("### 📎 Upload PDFs for RAG")
+pdf_files = st.sidebar.file_uploader("Upload one or more PDFs", type=["pdf"], accept_multiple_files=True)
+
+# Process PDF files placeholder
+if pdf_files:
+    for file in pdf_files:
+        # Save uploaded file for future RAG indexing
+        upload_dir = Path("rag_uploads")
+        upload_dir.mkdir(exist_ok=True)
+        filepath = upload_dir / file.name
+        with open(filepath, "wb") as f:
+            f.write(file.read())
+    st.sidebar.success("Files uploaded. RAG pipeline integration coming soon.")
+
 st.title("💬 Ollama Chatbot")
 
-# Session history
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# Input box
-with st.form("chat-form", clear_on_submit=True):
-    user_input = st.text_input("Ask me anything:", "")
-    submitted = st.form_submit_button("Send")
+# Chat input
+if prompt := st.chat_input("Ask me anything..."):
+    with st.chat_message("user"):
+        st.markdown(prompt)
 
-if submitted and user_input:
     try:
         res = requests.post(OLLAMA_URL, json={
             "model": OLLAMA_MODEL,
-            "prompt": user_input,
+            "prompt": prompt,
             "stream": False
         })
         res.raise_for_status()
@@ -29,10 +53,11 @@ if submitted and user_input:
     except Exception as e:
         result = f"Error: {str(e)}"
 
-    st.session_state.history.append((user_input, result))
+    st.session_state.history.append((prompt, result))
 
-# Show conversation
-for user, bot in reversed(st.session_state.history):
-    st.markdown(f"**You:** {user}")
-    st.markdown(f"**Bot:** {bot}")
-    st.markdown("---")
+# Display chat history
+for user, bot in st.session_state.history:
+    with st.chat_message("user"):
+        st.markdown(user)
+    with st.chat_message("assistant"):
+        st.markdown(bot)

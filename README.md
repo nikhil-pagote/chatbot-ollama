@@ -41,3 +41,6 @@ This will launch the app at http://localhost:3000.
 
 To run niceGUI app:
 poetry run python src/frontends/nicegui_ui.py
+
+To run Gradio app:
+poetry run python src/frontends/gradio_ui.py
