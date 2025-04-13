@@ -9,6 +9,7 @@ from langchain_community.embeddings import HuggingFaceInferenceAPIEmbeddings
 from langchain_groq import ChatGroq
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableMap, RunnableLambda
+from langchain_mcp import format_with_mcp  # Added for MCP formatting
 from dotenv import load_dotenv  # Load environment variables from .env
 
 # Load environment variables from .env file
@@ -82,7 +83,7 @@ except Exception as e:
     st.error(f"❌ Failed to load FAISS vector store: {e}")
     st.stop()
 
-# Prompt template to guide LLM
+# Prompt template to guide LLM (this can be optional with MCP)
 prompt_template = PromptTemplate.from_template(
     """Use the following context to answer the question.
 
@@ -96,6 +97,7 @@ Question:
 llm = ChatGroq(temperature=0.2, model_name=GROQ_MODEL, api_key=GROQ_API_KEY)
 
 # Retrieve relevant documents from FAISS
+
 def get_context(question: str, k: int = 4):
     try:
         docs = vectordb.similarity_search_with_score(question, k=k)
@@ -111,10 +113,11 @@ def get_context(question: str, k: int = 4):
 
     return docs
 
-# Build the LangChain chain
+# Build the LangChain chain with MCP
+
 def build_chain():
     return RunnableMap({
-        "context": RunnableLambda(lambda x: "\n---\n".join([doc.page_content for doc, _ in get_context(x["question"])])),
+        "context": RunnableLambda(lambda x: format_with_mcp(query=x["question"], documents=[doc for doc, _ in get_context(x["question"])])),
         "question": lambda x: x["question"]
     }) | prompt_template | llm
 
