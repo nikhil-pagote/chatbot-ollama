@@ -75,15 +75,18 @@ llm = ChatGroq(temperature=0.2, model_name=GROQ_MODEL, api_key=GROQ_API_KEY)
 # Context retrieval function
 def get_context(question: str, k: int = 4) -> str:
     try:
-        if not Path(f"{FAISS_PATH}/index.faiss").exists():
+        if vectordb is None:
             return "Vector store is not ready. Please upload PDFs first."
 
-        # Dynamically load FAISS
-        vectordb = FAISS.load_local(str(FAISS_PATH), embeddings, allow_dangerous_deserialization=True)
+        # Use Max Marginal Relevance to get diverse results
+        docs = vectordb.max_marginal_relevance_search(
+            question,
+            k=k,
+            fetch_k=15,  # Number of docs to fetch before reranking
+            lambda_mult=0.5  # Trade-off between relevance and diversity
+        )
 
-        docs = vectordb.similarity_search(question, k=k)
         context_parts = []
-
         for i, doc in enumerate(docs, start=1):
             source = doc.metadata.get("source", "unknown")
             page = doc.metadata.get("page", "N/A")
@@ -100,6 +103,7 @@ def get_context(question: str, k: int = 4) -> str:
     except Exception as e:
         logger.error(f"Error retrieving context: {e}")
         return f"Error retrieving context: {str(e)}"
+
 
 
 # Chain definition
