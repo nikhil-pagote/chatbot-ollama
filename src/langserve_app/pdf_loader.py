@@ -7,7 +7,8 @@ import os
 from dotenv import load_dotenv
 
 # Constants
-FAISS_PATH = "faiss_index"
+BASE_DIR = Path(__file__).resolve().parent
+FAISS_PATH = BASE_DIR / "faiss_index"
 
 # Load environment variables (used for HF_API_KEY)
 load_dotenv()
@@ -38,6 +39,9 @@ def load_and_embed_pdfs(upload_folder: str = "rag_uploads"):
     # Split documents into chunks
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
     split_docs = text_splitter.split_documents(all_documents)
+    if not split_docs:
+        print("⚠️ No content found to embed. Please upload valid PDFs.")
+        return
 
     # Initialize Hugging Face Embeddings
     embeddings = HuggingFaceInferenceAPIEmbeddings(
