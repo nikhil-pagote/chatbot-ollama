@@ -43,64 +43,47 @@ if "history" not in st.session_state:
 
 # --- CHAT UI ---
 if prompt := st.chat_input("Ask me anything..."):
-    with st.chat_message("user"):
-        st.markdown(prompt)
+    # with st.chat_message("user"):
+    #     st.markdown(prompt)
 
     try:
-        # Simple payload with just the question
-        payload = {
-            "input": {
-                "question": prompt
-            }
-        }
-        
-        # Make request with debug info
-        print(f"Sending request to {API_CHAT_URL}")
-        print(f"Payload: {payload}")
-        
-        res = requests.post(API_CHAT_URL, json=payload)
-        print(f"Response status: {res.status_code}")
-        print(f"Response headers: {dict(res.headers)}")
-        print(f"Response content: {res.text}")
-        
-        if res.status_code == 500:
-            error_detail = res.json().get("detail", "Unknown server error") if res.text else "Unknown server error"
-            reply = f"❌ Server Error: {error_detail}"
-            context = None
-        else:
-            res.raise_for_status()
-            response = res.json()
-            
-            if isinstance(response, dict):
-                output = response.get("output", {})
-                if isinstance(output, dict):
-                    reply = output.get("content", "❌ No reply content")
-                    context = output.get("context", None)
-                else:
-                    reply = str(output)
-                    context = None
-            else:
-                reply = "❌ Invalid response format"
-                context = None
-                
-    except requests.exceptions.RequestException as e:
-        reply = f"❌ Network Error: {str(e)}"
-        context = None
-    except ValueError as e:
-        reply = f"❌ Invalid JSON response: {str(e)}"
-        context = None
-    except Exception as e:
-        reply = f"❌ Error: {str(e)}\nResponse content: {res.text if 'res' in locals() else 'No response'}"
-        context = None
+        payload = {"input": {"question": prompt}}
+        print("✅ Sending request to", API_CHAT_URL)
+        print("📦 Payload:", payload)
 
-    st.session_state.history.append((prompt, reply, context))
+        res = requests.post(API_CHAT_URL, json=payload)
+        print("📬 Response status:", res.status_code)
+        print("📬 Headers:", dict(res.headers))
+        print("📬 Body:", res.text)
+
+        res.raise_for_status()
+        response = res.json()
+
+        output = response.get("output", {})
+        reply = output.get("content")
+        context = output.get("context")
+
+        # Final fallback and debug
+        print("🧠 Final Reply:", reply)
+        print("📄 Final Context:", context)
+
+        if not reply:
+            reply = "⚠️ No reply returned."
+        if not context:
+            context = "⚠️ Context not available."
+
+        st.session_state.history.append((prompt, reply, context))
+
+    except Exception as e:
+        st.session_state.history.append((prompt, f"❌ Error: {str(e)}", None))
+
 
 # --- CHAT HISTORY ---
 for user_msg, bot_reply, ctx in st.session_state.history:
     with st.chat_message("user"):
         st.markdown(user_msg)
     with st.chat_message("assistant"):
-        st.markdown(bot_reply)
+        st.markdown(bot_reply or "⚠️ No reply returned.")
         if SHOW_CONTEXT and ctx:
             st.markdown("---")
             st.markdown("**Retrieved Context:**", help="Context from FAISS DB used to answer")

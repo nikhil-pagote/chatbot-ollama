@@ -52,3 +52,8 @@ poetry run python src/frontends/nicegui_ui.py
 ```bash
 poetry run python src/frontends/gradio_ui.py
 ```
+
+- To run Langserve
+```bash
+poetry run uvicorn langserve_app.serve_api:app --reload --port 8001
+```

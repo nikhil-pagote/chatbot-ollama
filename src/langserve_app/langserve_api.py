@@ -75,46 +75,95 @@ llm = ChatGroq(temperature=0.2, model_name=GROQ_MODEL, api_key=GROQ_API_KEY)
 # Context retrieval function
 def get_context(question: str, k: int = 4) -> str:
     try:
-        if vectordb is None:
+        if not Path(f"{FAISS_PATH}/index.faiss").exists():
             return "Vector store is not ready. Please upload PDFs first."
+
+        # Dynamically load FAISS
+        vectordb = FAISS.load_local(str(FAISS_PATH), embeddings, allow_dangerous_deserialization=True)
+
         docs = vectordb.similarity_search(question, k=k)
-        return "\n---\n".join([doc.page_content for doc in docs])
+        context_parts = []
+
+        for i, doc in enumerate(docs, start=1):
+            source = doc.metadata.get("source", "unknown")
+            page = doc.metadata.get("page", "N/A")
+            part = f"""### Chunk {i}
+📄 **Source**: {source}
+📄 **Page**: {page}
+
+{doc.page_content}
+"""
+            context_parts.append(part)
+
+        return "\n---\n".join(context_parts)
+
     except Exception as e:
         logger.error(f"Error retrieving context: {e}")
         return f"Error retrieving context: {str(e)}"
 
+
 # Chain definition
+from langchain_core.runnables import RunnableLambda
+from typing import Dict, Any
+from fastapi import HTTPException
+import logging
+
+logger = logging.getLogger(__name__)
+
+from langchain_core.runnables import RunnableLambda
+from typing import Dict, Any
+from fastapi import HTTPException
+import logging
+
+logger = logging.getLogger("langserve_api")
+
 def create_chain():
-    def process_input(input_dict: Dict[str, Any]) -> Dict[str, str]:
-        try:
-            logger.info(f"Processing input: {input_dict}")
+    try:
+        # Step 1: Extract and return question + context
+        def process_input(input_dict: Dict[str, Any]) -> tuple[str, str]:
             question = input_dict.get("question", "")
             if not question:
-                raise ValueError("Question field is required")
-            
+                raise ValueError("Missing 'question' in input payload")
             context = get_context(question)
-            logger.info("Context retrieved successfully")
-            
-            return {
-                "context": context,
-                "question": question
-            }
-        except Exception as e:
-            logger.error(f"Error in process_input: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            logger.info(f"📥 Received input: {question}")
+            logger.info(f"📄 Retrieved context:\n{context}")
+            return question, context
 
-    def format_output(llm_output: Any) -> Dict[str, Any]:
-        try:
-            logger.info("Formatting output")
-            return {
-                "content": llm_output.content if hasattr(llm_output, "content") else str(llm_output),
-                "context": get_context(llm_output.input["question"]) if hasattr(llm_output, "input") else ""
-            }
-        except Exception as e:
-            logger.error(f"Error in format_output: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+        # Step 2: Format prompt using question and context
+        def prepare_prompt(data: tuple[str, str]) -> str:
+            question, context = data
+            return prompt_template.format(question=question, context=context)
 
-    return RunnableLambda(process_input) | prompt_template | llm | RunnableLambda(format_output)
+        # Step 3: Format LLM output + attach original context
+        def format_output(llm_output: Any, original_input: tuple[str, str]) -> Dict[str, Any]:
+            try:
+                logger.info(f"📤 LLM Output: {llm_output}")
+                return {
+                    "content": getattr(llm_output, "content", str(llm_output)),
+                    "context": original_input[1]  # context
+                }
+            except Exception as e:
+                logger.error(f"🚨 Error in format_output: {e}")
+                raise HTTPException(status_code=500, detail=f"Format Output Error: {str(e)}")
+
+        # Chain assembly
+        return (
+            RunnableLambda(process_input)
+            | RunnableLambda(lambda q_and_ctx: {
+                "prompt": prompt_template.format(question=q_and_ctx[0], context=q_and_ctx[1]),
+                "original_input": q_and_ctx
+            })
+            | RunnableLambda(lambda data: {
+                "llm_output": llm.invoke(data["prompt"]),
+                "original_input": data["original_input"]
+            })
+            | RunnableLambda(lambda data: format_output(data["llm_output"], data["original_input"]))
+        )
+
+    except Exception as e:
+        logger.error(f"❌ Failed to build LangChain pipeline: {e}")
+        return None
+
 
 # Add LangServe endpoint
 add_routes(app, create_chain(), path="/chat")
@@ -139,8 +188,13 @@ async def upload_pdf(file: UploadFile = File(...)):
         if not split_docs:
             return JSONResponse(status_code=400, content={"error": "No valid text chunks found in the document."})
 
-        new_faiss = FAISS.from_documents(split_docs, embedding=embeddings)
-        new_faiss.save_local(FAISS_PATH)
+        if Path(f"{FAISS_PATH}/index.faiss").exists():
+            existing_db = FAISS.load_local(str(FAISS_PATH), embeddings, allow_dangerous_deserialization=True)
+            existing_db.add_documents(split_docs)
+            existing_db.save_local(FAISS_PATH)
+        else:
+            new_faiss = FAISS.from_documents(split_docs, embedding=embeddings)
+            new_faiss.save_local(FAISS_PATH)
 
         return {"status": f"✅ Successfully embedded and stored '{file.filename}' in FAISS."}
     except Exception as e:
