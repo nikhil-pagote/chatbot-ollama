@@ -23,6 +23,7 @@ dependencies = [
     "langchain_groq",
     "langchain_chroma",
     "langserve",
+    "langgraph (>=0.3.29,<0.4.0)",
     "faiss-cpu",
     "pymupdf",
     "langchain-mcp-adapters",

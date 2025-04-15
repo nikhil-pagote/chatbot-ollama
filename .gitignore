@@ -187,3 +187,5 @@ src/langserve_app/.env
 src/langserve_app/chroma_db
 src/langserve_app/faiss_index
 src/langserve_app/rag_uploads
+src/langgraph_chain/faiss_index
+src/langgraph_chain/rag_uploads
