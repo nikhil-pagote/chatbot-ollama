@@ -57,6 +57,7 @@ class RAGGraphState(TypedDict, total=False):  # total=False makes keys optional
     question: str
     context: str
     answer: str
+    metadata: dict
 
 # Define nodes
 def retrieve_node(state: RAGGraphState) -> RAGGraphState:
@@ -100,7 +101,15 @@ Question:
         else:
             final_answer = str(response)
 
-        return {**state, "answer": final_answer}
+        return {
+                **state,
+                "answer": final_answer,
+                "metadata": {
+                    "pdf_filename": "cover_letter.pdf",
+                    "llm_used": GROQ_MODEL,
+                    "doc_count": len(state["context"].split("\n---\n")) if "context" in state else 0,
+                }
+            }
 
     except Exception as e:
         return {

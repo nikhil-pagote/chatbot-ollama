@@ -65,6 +65,6 @@ for user_msg, bot_reply, ctx in st.session_state.history:
         st.markdown(bot_reply)
         if ctx:
             with st.expander("📄 Show Retrieved Context"):
-                formatted_ctx = ctx.replace("\n", "<br>")
-                st.markdown(f"<div style='white-space:normal; font-family:monospace;'><pre>{formatted_ctx}</pre></div>", unsafe_allow_html=True)
-
+                st.markdown(ctx.replace("\n", "<br>"), unsafe_allow_html=True)
+                if "metadata" in reply:
+                    st.json(reply["metadata"])

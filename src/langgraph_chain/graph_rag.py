@@ -1,6 +1,7 @@
 # langserve_api.py
 import os
 import sys
+import logging
 from pathlib import Path
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -10,10 +11,13 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langserve import add_routes
-import logging
+from langchain.callbacks.tracers.langchain import wait_for_all_tracers
+from langchain_core.tracers import LangChainTracer
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from langgraph_chain.basic_graph import rag_graph_app  # Import LangGraph chain
+
+tracer = LangChainTracer()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
